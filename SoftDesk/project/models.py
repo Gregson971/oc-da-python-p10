@@ -20,6 +20,9 @@ class Project(models.Model):
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_author', verbose_name='Auteur'
     )
+    contributors = models.ManyToManyField(
+        to=settings.AUTH_USER_MODEL, through='Contributor', related_name='contributions', verbose_name='Contributeurs'
+    )
     created_time = models.DateTimeField(auto_now_add=True, verbose_name='Date de création')
 
     def __str__(self):
