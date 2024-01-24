@@ -4,6 +4,8 @@ from rest_framework import status
 
 from django.db import transaction
 
+from authentication.models import User
+
 from .models import Project, Issue, Comment, Contributor
 
 from .permissions import ProjectPermission, IssuePermission, CommentPermission, ContributorPermission
@@ -59,12 +61,36 @@ class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
-class IssueViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
+class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
+    permission_classes = [IssuePermission]
     serializer_class = IssueListSerializer
     detail_serializer_class = IssueDetailSerializer
 
     def get_queryset(self):
-        return Issue.objects.filter(project_id=self.kwargs['project_pk'])
+        return Issue.objects.filter(project=self.kwargs['projects_pk'])
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        print(request.user)
+        request.data['author'] = request.user.pk
+        request.data['project'] = self.kwargs['projects_pk']
+
+        project = Project.objects.get(pk=self.kwargs['projects_pk'])
+        assignee = User.objects.get(pk=request.data['assigned_to'])
+
+        if assignee not in project.contributors.all():
+            Contributor.objects.create(user=assignee, project=project, role='CONTRIBUTOR')
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        request.data['author'] = request.user.pk
+        request.data['project'] = self.kwargs['projects_pk']
+        return super().update(request, *args, **kwargs)
 
 
 class CommentViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
@@ -72,7 +98,7 @@ class CommentViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
     detail_serializer_class = CommentDetailSerializer
 
     def get_queryset(self):
-        return Comment.objects.filter(issue_id=self.kwargs['issue_pk'])
+        return Comment.objects.filter(issue_id=self.kwargs['issues_pk'])
 
 
 class ContributorViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
@@ -80,4 +106,4 @@ class ContributorViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
     detail_serializer_class = ContributorDetailSerializer
 
     def get_queryset(self):
-        return Contributor.objects.filter(project_id=self.kwargs['project_pk'])
+        return Contributor.objects.filter(project_id=self.kwargs['projects_pk'])

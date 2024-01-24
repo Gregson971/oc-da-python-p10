@@ -73,10 +73,10 @@ class CommentDetailSerializer(serializers.ModelSerializer):
 class ContributorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
-        fields = ['id', 'role', 'created_time']
+        fields = ['id', 'role', 'user', 'project', 'created_time']
 
 
 class ContributorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
-        fields = ['id', 'role', 'created_time']
+        fields = ['id', 'role', 'user', 'project', 'created_time']

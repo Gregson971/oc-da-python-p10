@@ -11,7 +11,7 @@ def check_contributor(user, project):
 
 
 class ProjectPermission(BasePermission):
-    def has_permission(self, request, view):
+    def has_permission(self, request):
         return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
@@ -22,7 +22,14 @@ class ProjectPermission(BasePermission):
 
 
 class IssuePermission(BasePermission):
-    pass
+    def has_permission(self, request):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        if view.action in ['retrieve', 'list']:
+            return check_contributor(request.user, obj.project)
+        elif view.action in ['update', 'partial_update', 'destroy']:
+            return request.user == obj.author
 
 
 class CommentPermission(BasePermission):

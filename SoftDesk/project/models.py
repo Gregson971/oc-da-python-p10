@@ -46,7 +46,7 @@ class Issue(models.Model):
     title = models.CharField(max_length=128, verbose_name='Titre')
     description = models.TextField(max_length=2048, verbose_name='Description')
     assigned_to = models.ForeignKey(
-        to=Contributor, on_delete=models.CASCADE, related_name='assigned_issues', null=True, blank=True
+        to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assigned_issues', null=True, blank=True
     )
     priority = models.CharField(choices=PRIORITIES_CHOICES, max_length=6)
     tag = models.CharField(choices=TAGS_CHOICES, max_length=7)
