@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from .models import Project, Issue, Comment, Contributor
@@ -8,9 +7,6 @@ class ProjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'title', 'description', 'type', 'author', 'created_time']
-
-    def save(self):
-        super().save(author=self.context['request'].user)
 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
@@ -30,16 +26,6 @@ class IssueListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
         fields = ['id', 'title', 'description', 'assigned_to', 'priority', 'tag', 'status', 'project', 'author']
-
-    def save(self):
-        project_id = self.context['view'].kwargs['project_pk']
-        project_object = get_object_or_404(Project, pk=project_id)
-
-        super().save(
-            author=self.context['request'].user,
-            assigned_to=self.context['request'].user,
-            project=project_object,
-        )
 
 
 class IssueDetailSerializer(serializers.ModelSerializer):

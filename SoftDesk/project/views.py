@@ -1,12 +1,12 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework import status
 
-from django.db.models import Q
+from django.db import transaction
 
 from .models import Project, Issue, Comment, Contributor
 
-from .permissions import IsAdminAuthenticated
+from .permissions import ProjectPermission, IssuePermission, CommentPermission, ContributorPermission
 
 from .serializers import (
     ProjectListSerializer,
@@ -29,12 +29,34 @@ class MultipleSerializerMixin:
         return super().get_serializer_class()
 
 
-class ProjectViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
+class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
+    permission_classes = [ProjectPermission]
     serializer_class = ProjectListSerializer
     detail_serializer_class = ProjectDetailSerializer
 
     def get_queryset(self):
-        return Project.objects.all()
+        projects_ids = [
+            contributor.project_id for contributor in Contributor.objects.filter(user_id=self.request.user).all()
+        ]
+        return Project.objects.filter(id__in=projects_ids)
+
+    @transaction.atomic
+    def create(self, request):
+        request.data['author'] = request.user.pk
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        project = Project.objects.get(pk=serializer.data['id'])
+        Contributor.objects.create(user=request.user, project=project, role='CONTRIBUTOR')
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        request.data['author'] = request.user.pk
+        request.data['contributors'] = request.user.pk
+        return super().update(request, *args, **kwargs)
 
 
 class IssueViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
