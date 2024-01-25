@@ -8,7 +8,7 @@ from authentication.models import User
 
 from .models import Project, Issue, Comment, Contributor
 
-from .permissions import ProjectPermission, IssuePermission, CommentPermission, ContributorPermission
+from .permissions import ProjectPermission, IssuePermission, CommentPermission
 
 from .serializers import (
     ProjectListSerializer,
@@ -93,12 +93,29 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
-class CommentViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
+class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
+    permission_classes = [CommentPermission]
     serializer_class = CommentListSerializer
     detail_serializer_class = CommentDetailSerializer
 
     def get_queryset(self):
         return Comment.objects.filter(issue_id=self.kwargs['issues_pk'])
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        request.data['author'] = request.user.pk
+        request.data['issue'] = self.kwargs['issues_pk']
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        request.data['author'] = request.user.pk
+        request.data['issue'] = self.kwargs['issues_pk']
+        return super().update(request, *args, **kwargs)
 
 
 class ContributorViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
