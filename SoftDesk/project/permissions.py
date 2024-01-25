@@ -41,3 +41,8 @@ class CommentPermission(BasePermission):
             return check_contributor(request.user, obj.issue.project)
         elif view.action in ['update', 'partial_update', 'destroy']:
             return request.user == obj.author
+
+
+class ContributorPermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated

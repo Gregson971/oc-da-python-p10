@@ -10,15 +10,15 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
-    contributors = serializers.SerializerMethodField()
+    issues = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ['id', 'title', 'description', 'type', 'author', 'created_time', 'contributors']
+        fields = ['id', 'title', 'description', 'type', 'author', 'created_time', 'issues', 'contributors']
 
-    def get_contributors(self, instance):
-        queryset = instance.contributors
-        serializer = ContributorDetailSerializer(queryset, many=True)
+    def get_issues(self, instance):
+        queryset = Issue.objects.filter(project_id=instance.id)
+        serializer = IssueListSerializer(queryset, many=True)
         return serializer.data
 
 
@@ -29,7 +29,7 @@ class IssueListSerializer(serializers.ModelSerializer):
 
 
 class IssueDetailSerializer(serializers.ModelSerializer):
-    project = ProjectListSerializer(read_only=True)
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
@@ -43,11 +43,12 @@ class IssueDetailSerializer(serializers.ModelSerializer):
             'status',
             'author',
             'project',
+            'comments',
         ]
 
-    def get_project(self, instance):
-        queryset = instance.project
-        serializer = ProjectDetailSerializer(queryset, many=True)
+    def get_comments(self, instance):
+        queryset = Comment.objects.filter(issue_id=instance.id)
+        serializer = CommentListSerializer(queryset, many=True)
         return serializer.data
 
 
@@ -58,16 +59,9 @@ class CommentListSerializer(serializers.ModelSerializer):
 
 
 class CommentDetailSerializer(serializers.ModelSerializer):
-    issue = IssueListSerializer(read_only=True)
-
     class Meta:
         model = Comment
         fields = ['id', 'description', 'uuid', 'author', 'issue', 'created_time']
-
-    def get_issue(self, instance):
-        queryset = instance.issue
-        serializer = IssueDetailSerializer(queryset, many=True)
-        return serializer.data
 
 
 class ContributorListSerializer(serializers.ModelSerializer):

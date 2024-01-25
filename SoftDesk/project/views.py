@@ -8,7 +8,7 @@ from authentication.models import User
 
 from .models import Project, Issue, Comment, Contributor
 
-from .permissions import ProjectPermission, IssuePermission, CommentPermission
+from .permissions import ProjectPermission, IssuePermission, CommentPermission, ContributorPermission
 
 from .serializers import (
     ProjectListSerializer,
@@ -119,6 +119,7 @@ class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
 
 
 class ContributorViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
+    permission_classes = [ContributorPermission]
     serializer_class = ContributorListSerializer
     detail_serializer_class = ContributorDetailSerializer
 
