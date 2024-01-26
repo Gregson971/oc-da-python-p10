@@ -11,6 +11,8 @@ from .models import User
 
 from .serializers import UserSerializer, UserDetailSerializer
 
+from .permissions import UserPermission
+
 FIFTEEN_YEARS_IN_DAYS = 15 * 365.25
 
 
@@ -26,6 +28,7 @@ class MultipleSerializerMixin:
 class UserViewSet(MultipleSerializerMixin, ModelViewSet):
     serializer_class = UserSerializer
     detail_serializer_class = UserDetailSerializer
+    permission_classes = [UserPermission]
 
     def get_queryset(self):
         return User.objects.all()
