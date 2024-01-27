@@ -18,10 +18,6 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'created_time',
         ]
-        extra_kwargs = {
-            'age': {'format': '%Y-%m-%d'},
-            'password': {'write_only': True},
-        }
 
 
 class UserDetailSerializer(serializers.ModelSerializer):

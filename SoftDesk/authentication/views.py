@@ -1,4 +1,5 @@
-from datetime import datetime
+from dateutil.parser import parse as parse_date
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from rest_framework.viewsets import ModelViewSet
@@ -13,7 +14,7 @@ from .serializers import UserSerializer, UserDetailSerializer
 
 from .permissions import UserPermission
 
-FIFTEEN_YEARS_IN_DAYS = 15 * 365.25
+FIFTEEN_YEARS = 15
 
 
 class MultipleSerializerMixin:
@@ -39,27 +40,55 @@ class UserViewSet(MultipleSerializerMixin, ModelViewSet):
 
         if age_str:
             try:
-                age_date = datetime.strptime(age_str, '%Y-%m-%d').date()
+                age_date = parse_date(age_str).date()
             except ValueError:
                 return Response(
-                    {"error": "Format de date invalide. Utilisez le format YYYY-MM-DD."},
+                    {"error": "Invalid date format"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             request.data['age'] = age_date
 
         if age_date:
-            fifteen_years_ago = timezone.now() - timezone.timedelta(days=FIFTEEN_YEARS_IN_DAYS)
+            fifteen_years_ago = timezone.now() - relativedelta(years=FIFTEEN_YEARS)
             is_under_fifteen = age_date >= fifteen_years_ago.date()
 
             if is_under_fifteen:
-                request.data['can_data_be_shared'] = not is_under_fifteen
+                return Response(
+                    {"error": "You must be at least 15 years old to register."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
 
-        user = User.objects.get(pk=serializer.data['id'])
-        user.set_password(serializer.data['password'])
-        user.save()
+            user = User.objects.get(pk=serializer.data['id'])
+            user.set_password(serializer.data['password'])
+            user.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        age_str = request.data['age']
+
+        if age_str:
+            try:
+                age_date = parse_date(age_str).date()
+            except ValueError:
+                return Response(
+                    {"error": "Invalid date format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            request.data['age'] = age_date
+
+        if age_date:
+            fifteen_years_ago = timezone.now() - relativedelta(years=FIFTEEN_YEARS)
+            is_under_fifteen = age_date >= fifteen_years_ago.date()
+
+            if is_under_fifteen:
+                return Response(
+                    {"error": "You must be at least 15 years old to use this app."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            return super().update(request, *args, **kwargs)

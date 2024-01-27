@@ -9,6 +9,7 @@ django = "*"
 djangorestframework = "*"
 djangorestframework-simplejwt = "*"
 drf-nested-routers = "*"
+python-dateutil = "*"
 
 [dev-packages]
 
