@@ -62,10 +62,8 @@ Il est possible de naviguer dans l'API avec différents outils :
 
 - la plateforme [Postman](https://www.postman.com/) ;
 - l'outil de commandes [cURL](https://curl.se/) ;
-- l'interface intégrée Django REST framework à l'adresse http://127.0.0.1:8000/.
+- l'interface intégrée Django REST framework à l'adresse http://127.0.0.1:8000/api/... .
 
-### Générer un rapport flake8-html
+### Documentation de l'API
 
-```sh
-flake8 --format=html --htmldir=flake-report
-```
+La documentation de l'API est disponible à l'adresse : https://documenter.getpostman.com/view/32182032/2s9YysEN6x

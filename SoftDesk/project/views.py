@@ -1,3 +1,6 @@
+from re import A
+from django.db.models import Q
+
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
@@ -23,6 +26,8 @@ from .serializers import (
 
 
 class MultipleSerializerMixin:
+    '''Mixin that allows to use different serializers for different actions.'''
+
     detail_serializer_class = None
 
     def get_serializer_class(self):
@@ -32,6 +37,8 @@ class MultipleSerializerMixin:
 
 
 class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
+    '''Viewset for Project model.'''
+
     permission_classes = [ProjectPermission]
     serializer_class = ProjectListSerializer
     detail_serializer_class = ProjectDetailSerializer
@@ -62,16 +69,20 @@ class ProjectViewSet(MultipleSerializerMixin, ModelViewSet):
 
 
 class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
+    '''Viewset for Issue model.'''
+
     permission_classes = [IssuePermission]
     serializer_class = IssueListSerializer
     detail_serializer_class = IssueDetailSerializer
 
     def get_queryset(self):
-        return Issue.objects.filter(project=self.kwargs['projects_pk'])
+        projects_ids = [
+            contributor.project_id for contributor in Contributor.objects.filter(user_id=self.request.user).all()
+        ]
+        return Issue.objects.filter(Q(project_id=self.kwargs['projects_pk']) & Q(project_id__in=projects_ids))
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        print(request.user)
         request.data['author'] = request.user.pk
         request.data['project'] = self.kwargs['projects_pk']
 
@@ -94,12 +105,17 @@ class IssueViewSet(MultipleSerializerMixin, ModelViewSet):
 
 
 class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
+    '''Viewset for Comment model.'''
+
     permission_classes = [CommentPermission]
     serializer_class = CommentListSerializer
     detail_serializer_class = CommentDetailSerializer
 
     def get_queryset(self):
-        return Comment.objects.filter(issue_id=self.kwargs['issues_pk'])
+        projects_ids = [
+            contributor.project_id for contributor in Contributor.objects.filter(user_id=self.request.user).all()
+        ]
+        return Comment.objects.filter(Q(issue_id=self.kwargs['issues_pk']) & Q(issue__project_id__in=projects_ids))
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -119,6 +135,8 @@ class CommentViewSet(MultipleSerializerMixin, ModelViewSet):
 
 
 class ContributorViewSet(MultipleSerializerMixin, ReadOnlyModelViewSet):
+    '''Viewset for Contributor model.'''
+
     permission_classes = [ContributorPermission]
     serializer_class = ContributorListSerializer
     detail_serializer_class = ContributorDetailSerializer

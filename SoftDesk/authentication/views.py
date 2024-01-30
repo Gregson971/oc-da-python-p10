@@ -18,6 +18,8 @@ FIFTEEN_YEARS = 15
 
 
 class MultipleSerializerMixin:
+    '''Mixin that allows to use different serializers for different actions.'''
+
     detail_serializer_class = None
 
     def get_serializer_class(self):
@@ -27,6 +29,8 @@ class MultipleSerializerMixin:
 
 
 class UserViewSet(MultipleSerializerMixin, ModelViewSet):
+    '''Viewset for User model.'''
+
     serializer_class = UserSerializer
     detail_serializer_class = UserDetailSerializer
     permission_classes = [UserPermission]
